@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payments
+  namespace: platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: payments
+  template:
+    metadata:
+      labels:
+        app: payments
+    spec:
+      containers:
+        - name: payments
+          image: platformobservabilityrtr.azurecr.io/payments:dev
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payments
+  namespace: platform
+spec:
+  type: ClusterIP
+  selector:
+    app: payments
+  ports:
+    - port: 8000
+      targetPort: 8000

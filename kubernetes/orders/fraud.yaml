@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fraud
+  namespace: platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: fraud
+  template:
+    metadata:
+      labels:
+        app: fraud
+    spec:
+      containers:
+        - name: fraud
+          image: platformobservabilityrtr.azurecr.io/fraud:dev
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fraud
+  namespace: platform
+spec:
+  type: ClusterIP
+  selector:
+    app: fraud
+  ports:
+    - port: 8000
+      targetPort: 8000
