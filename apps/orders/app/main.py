@@ -6,6 +6,9 @@ import httpx
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi import Header
+from app.logging_config import configure_logging
+
+logger = configure_logging("orders")
 
 app = FastAPI(title="Orders Service")
 
@@ -57,6 +60,15 @@ async def create_order(order: OrderRequest,
             },
            headers=headers,
         )
+    
+    logger.info(
+    "Order created",
+    extra={
+        "event": "order_created",
+        "request_id": request_id,
+        "order_id": order_id,
+    },
+    )
 
     return {
         "request_id": request_id,
