@@ -16,6 +16,7 @@ spec:
       containers:
         - name: fraud
           image: platformobservabilityrtr.azurecr.io/fraud:dev
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
           resources:

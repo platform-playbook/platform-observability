@@ -16,6 +16,7 @@ spec:
       containers:
         - name: payments
           image: platformobservabilityrtr.azurecr.io/payments:dev
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
           resources:
