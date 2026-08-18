@@ -36,6 +36,8 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  labels:
+    monitoring: platform-app
   name: orders
   namespace: platform
 spec:
@@ -43,5 +45,6 @@ spec:
   selector:
     app: orders
   ports:
-    - port: 8000
+    - name: http
+      port: 8000
       targetPort: 8000

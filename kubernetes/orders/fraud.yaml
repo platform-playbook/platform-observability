@@ -30,6 +30,8 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  labels:
+    monitoring: platform-app
   name: fraud
   namespace: platform
 spec:
@@ -37,5 +39,6 @@ spec:
   selector:
     app: fraud
   ports:
-    - port: 8000
+    - name: http
+      port: 8000
       targetPort: 8000
