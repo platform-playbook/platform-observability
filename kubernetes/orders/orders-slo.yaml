@@ -1,0 +1,91 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: orders-slo
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  groups:
+    - name: orders-slo
+      interval: 30s
+      rules:
+        - record: orders:error_ratio5m
+          expr: |
+            sum(rate(http_requests_total{service="orders",status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{service="orders"}[5m]))
+
+        - record: orders:slo_target
+          expr: vector(0.999)
+
+        - record: orders:error_budget_consumed5m
+          expr: |
+            orders:error_ratio5m / (1 - orders:slo_target)
+
+        - record: orders:error_budget_remaining5m
+          expr: |
+            clamp_min(
+              1 - orders:error_budget_consumed5m,
+              0
+            )
+
+        - record: orders:error_budget_burn_rate5m
+          expr: |
+            orders:error_ratio5m / (1 - orders:slo_target)
+
+        - record: orders:error_ratio30m
+          expr: |
+            sum(rate(http_requests_total{service="orders",status=~"5.."}[30m]))
+            /
+            sum(rate(http_requests_total{service="orders"}[30m]))
+
+        - record: orders:error_ratio1h
+          expr: |
+            sum(rate(http_requests_total{service="orders",status=~"5.."}[1h]))
+            /
+            sum(rate(http_requests_total{service="orders"}[1h]))
+
+        - record: orders:error_ratio6h
+          expr: |
+            sum(rate(http_requests_total{service="orders",status=~"5.."}[6h]))
+            /
+            sum(rate(http_requests_total{service="orders"}[6h]))
+
+        - record: orders:error_budget_burn_rate30m
+          expr: |
+            orders:error_ratio30m / (1 - orders:slo_target)
+
+        - record: orders:error_budget_burn_rate1h
+          expr: |
+            orders:error_ratio1h / (1 - orders:slo_target)
+
+        - record: orders:error_budget_burn_rate6h
+          expr: |
+            orders:error_ratio6h / (1 - orders:slo_target)
+
+        - alert: OrdersSLOFastBurn
+          expr: |
+            orders:error_budget_burn_rate5m > 14.4
+            and
+            orders:error_budget_burn_rate1h > 14.4
+          for: 5m
+          labels:
+            severity: critical
+            service: orders
+          annotations:
+            summary: "Orders is burning error budget rapidly"
+            description: "Orders is experiencing a sustained fast SLO burn."
+
+        - alert: OrdersSLOSlowBurn
+          expr: |
+            orders:error_budget_burn_rate30m > 6
+            and
+            orders:error_budget_burn_rate6h > 6
+          for: 30m
+          labels:
+            severity: warning
+            service: orders
+          annotations:
+            summary: "Orders is slowly burning error budget"
+            description: "Orders is experiencing sustained SLO degradation."

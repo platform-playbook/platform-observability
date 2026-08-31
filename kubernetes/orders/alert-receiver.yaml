@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alert-receiver
+  namespace: platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alert-receiver
+  template:
+    metadata:
+      labels:
+        app: alert-receiver
+    spec:
+      containers:
+        - name: alert-receiver
+          image: python:3.12-slim
+          command:
+            - python
+            - -c
+            - |
+              from http.server import BaseHTTPRequestHandler, HTTPServer
+              import json
+
+              class Handler(BaseHTTPRequestHandler):
+                  def do_POST(self):
+                      length = int(self.headers.get("Content-Length", 0))
+                      body = self.rfile.read(length)
+
+                      print("=== ALERTMANAGER ALERT ===", flush=True)
+                      try:
+                          print(
+                              json.dumps(
+                                  json.loads(body),
+                                  indent=2
+                              ),
+                              flush=True
+                          )
+                      except Exception:
+                          print(body.decode(), flush=True)
+
+                      self.send_response(200)
+                      self.end_headers()
+                      self.wfile.write(b"OK")
+
+                  def do_GET(self):
+                      self.send_response(200)
+                      self.end_headers()
+                      self.wfile.write(b"OK")
+
+              HTTPServer(("0.0.0.0", 8000), Handler).serve_forever()
+          ports:
+            - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alert-receiver
+  namespace: platform
+spec:
+  selector:
+    app: alert-receiver
+  ports:
+    - port: 8000
+      targetPort: 8000
+  type: ClusterIP
